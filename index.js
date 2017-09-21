@@ -1,9 +1,10 @@
-'use strict';
+'use strict'
 
+const signer = require('./signer')
 const Wreck = require('wreck')
 let wreck
 
-module.exports = class Billplz {
+class Billplz {
 
   constructor(options) {
 
@@ -17,8 +18,8 @@ module.exports = class Billplz {
       this._apiEndpoint = options.endpoint || this._apiEndpoint
       this._sandboxApiEndpoint = options.sandboxEndpoint || this._sandboxApiEndpoint
       this._isSandbox = options.sandbox || this._isSandbox
-    }
-    else {
+      this._xSignatureKey = options.xSignatureKey
+    } else {
       this._apiKey = options
     }
 
@@ -28,7 +29,7 @@ module.exports = class Billplz {
 
     wreck =  Wreck.defaults({
       headers: { 'Authorization': 'Basic ' + new Buffer(this._apiKey).toString('base64') }
-    });
+    })
   }
 
   request(method, params, callback) {
@@ -36,7 +37,7 @@ module.exports = class Billplz {
         payload: params
       }, (err, res, payload) => {
         callback(err, JSON.parse(payload.toString()))
-    });
+    })
   }
 
   //create collection
@@ -58,21 +59,21 @@ module.exports = class Billplz {
   get_bill(billId, callback) {
     wreck.get(this._apiEndpoint + 'bills/' + billId, (err, res, payload) => {
       callback(err, JSON.parse(payload.toString()))
-    });
+    })
   }
 
   //delete bill
   delete_bill(billId, callback) {
     wreck.delete(this._apiEndpoint + 'bills/' + billId, (err, res, payload) => {
       callback(err, JSON.parse(payload.toString()))
-    });
+    })
   }
 
   //change collection status
   change_collection_status(collectionId, status, callback) {
     wreck.post(this._apiEndpoint + 'collections/' + collectionId + '/' + status, (err, res, payload) => {
       callback(err, JSON.parse(payload.toString()))
-    });
+    })
   }
 
   //registration check
@@ -81,4 +82,11 @@ module.exports = class Billplz {
       callback(err, JSON.parse(payload.toString()))
     })
   }
+
+  verifySignature(object, signature) {
+    const objectSignature = signer(object, this._xSignatureKey)
+    return objectSignature === signature
+  }
 }
+
+module.exports = Billplz
